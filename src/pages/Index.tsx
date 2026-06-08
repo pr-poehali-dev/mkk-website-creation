@@ -1,5 +1,151 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Icon from "@/components/ui/icon";
+
+type Message = { from: "bot" | "user"; text: string };
+
+const BOT_REPLIES: { keywords: string[]; answer: string }[] = [
+  { keywords: ["сумм", "сколько", "максимум", "минимум", "100"], answer: "Мы выдаём займы от 5 000 до 100 000 ₽. Сумма подбирается индивидуально в зависимости от вашей истории." },
+  { keywords: ["процент", "ставк", "переплат"], answer: "Ставка — от 0,8% в день. Точную сумму переплаты рассчитайте в нашем калькуляторе на сайте 👆" },
+  { keywords: ["срок", "дней", "месяц", "период"], answer: "Срок займа — от 7 до 365 дней. Вы выбираете удобный срок при оформлении заявки." },
+  { keywords: ["документ", "паспорт", "справк", "нужн"], answer: "Только паспорт гражданина РФ! Справки о доходах, поручители и залог не нужны 🎉" },
+  { keywords: ["одобр", "отказ", "история", "плохая"], answer: "Мы рассматриваем заявки даже с плохой кредитной историей. Решение принимается за 2–15 минут." },
+  { keywords: ["перевод", "карт", "получить", "деньги", "быстро"], answer: "Деньги переводим на любую карту РФ в течение 5 минут после одобрения. Работаем 24/7 🚀" },
+  { keywords: ["верификац", "фото", "селфи", "паспорт", "проверк"], answer: "Верификация проходит онлайн: нужно сфотографировать паспорт и сделать селфи. Занимает 3–5 минут." },
+  { keywords: ["досрочн", "погасить", "раньше"], answer: "Досрочное погашение доступно в любой момент без штрафов и комиссий ✅" },
+  { keywords: ["заявк", "оформить", "подать", "начать"], answer: "Отлично! Нажмите кнопку «Получить займ» вверху страницы или перейдите в раздел «Заявка» — это займёт 3 минуты." },
+  { keywords: ["привет", "здравствуй", "добрый", "хай", "hello"], answer: "Привет! 👋 Я помогу разобраться с займами. Спросите что угодно: сумма, ставка, документы — отвечу мгновенно!" },
+];
+
+const BOT_QUICK = ["Какая ставка?", "Нужен ли паспорт?", "Как быстро деньги?", "Можно с плохой КИ?"];
+
+function getBotReply(text: string): string {
+  const lower = text.toLowerCase();
+  for (const r of BOT_REPLIES) {
+    if (r.keywords.some((k) => lower.includes(k))) return r.answer;
+  }
+  return "Хороший вопрос! Для точного ответа свяжитесь с нами по телефону 8 800 555-XX-XX (бесплатно) или оставьте заявку — менеджер перезвонит за 5 минут.";
+}
+
+function ChatBot() {
+  const [open, setOpen] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([
+    { from: "bot", text: "Привет! 👋 Я Кредо — бот КредитБыстро. Задайте вопрос о займе или выберите тему ниже." },
+  ]);
+  const [input, setInput] = useState("");
+  const [typing, setTyping] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, typing]);
+
+  const sendMessage = (text: string) => {
+    if (!text.trim()) return;
+    setMessages((prev) => [...prev, { from: "user", text }]);
+    setInput("");
+    setTyping(true);
+    setTimeout(() => {
+      setTyping(false);
+      setMessages((prev) => [...prev, { from: "bot", text: getBotReply(text) }]);
+    }, 900);
+  };
+
+  return (
+    <>
+      {/* Bubble */}
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full btn-gradient shadow-2xl flex items-center justify-center animate-pulse-glow transition-transform hover:scale-110"
+        aria-label="Открыть чат"
+      >
+        {open ? <Icon name="X" size={24} className="text-white" /> : <Icon name="MessageCircle" size={26} className="text-white" />}
+        {!open && (
+          <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-green-400 border-2 border-white" />
+        )}
+      </button>
+
+      {/* Window */}
+      {open && (
+        <div className="fixed bottom-24 right-6 z-50 w-80 sm:w-96 bg-white rounded-3xl shadow-2xl border border-violet-100 flex flex-col overflow-hidden"
+          style={{ maxHeight: "520px", animation: "fadeUp 0.25s ease-out" }}>
+          {/* Header */}
+          <div className="btn-gradient px-5 py-4 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center">
+              <Icon name="Bot" size={20} className="text-white" />
+            </div>
+            <div>
+              <div className="text-white font-bold text-sm font-['Oswald']">Кредо — бот поддержки</div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-green-300 animate-pulse" />
+                <span className="text-white/70 text-xs">Онлайн · отвечает мгновенно</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3" style={{ minHeight: 0 }}>
+            {messages.map((m, i) => (
+              <div key={i} className={`flex ${m.from === "user" ? "justify-end" : "justify-start"}`}>
+                {m.from === "bot" && (
+                  <div className="w-7 h-7 rounded-full btn-gradient flex items-center justify-center mr-2 flex-shrink-0 mt-0.5">
+                    <Icon name="Bot" size={13} className="text-white" />
+                  </div>
+                )}
+                <div
+                  className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
+                    m.from === "user"
+                      ? "btn-gradient text-white rounded-br-sm"
+                      : "bg-gray-100 text-gray-800 rounded-bl-sm"
+                  }`}
+                >
+                  {m.text}
+                </div>
+              </div>
+            ))}
+            {typing && (
+              <div className="flex justify-start items-center gap-2">
+                <div className="w-7 h-7 rounded-full btn-gradient flex items-center justify-center flex-shrink-0">
+                  <Icon name="Bot" size={13} className="text-white" />
+                </div>
+                <div className="bg-gray-100 rounded-2xl rounded-bl-sm px-4 py-3 flex gap-1">
+                  {[0, 1, 2].map((d) => (
+                    <span key={d} className="w-2 h-2 rounded-full bg-violet-400 animate-bounce" style={{ animationDelay: `${d * 0.15}s` }} />
+                  ))}
+                </div>
+              </div>
+            )}
+            <div ref={bottomRef} />
+          </div>
+
+          {/* Quick replies */}
+          <div className="px-4 pb-2 flex flex-wrap gap-2">
+            {BOT_QUICK.map((q) => (
+              <button key={q} onClick={() => sendMessage(q)}
+                className="text-xs border border-violet-200 text-violet-600 px-3 py-1 rounded-full hover:bg-violet-50 transition-colors">
+                {q}
+              </button>
+            ))}
+          </div>
+
+          {/* Input */}
+          <div className="px-4 pb-4 pt-2 flex gap-2">
+            <input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && sendMessage(input)}
+              placeholder="Напишите вопрос..."
+              className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all"
+            />
+            <button onClick={() => sendMessage(input)}
+              className="w-10 h-10 rounded-xl btn-gradient flex items-center justify-center flex-shrink-0">
+              <Icon name="Send" size={16} className="text-white" />
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
 
 const HERO_IMG = "https://cdn.poehali.dev/projects/6b2e5350-d352-46b3-ad8a-13c70bd08e7a/files/e67eb373-6fdc-4ed7-92fb-517580fd4b29.jpg";
 const BG_IMG = "https://cdn.poehali.dev/projects/6b2e5350-d352-46b3-ad8a-13c70bd08e7a/files/58b1ea75-c1c0-433f-b5da-3dcb91c2a54d.jpg";
@@ -526,6 +672,9 @@ export default function Index() {
           </div>
         </div>
       </section>
+
+      {/* CHATBOT */}
+      <ChatBot />
 
       {/* FOOTER */}
       <footer className="bg-gray-900 py-10">
