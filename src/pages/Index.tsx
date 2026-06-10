@@ -1,112 +1,8 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import Icon from "@/components/ui/icon";
-
-/* ─── ChatBot ───────────────────────────────────────────────── */
-type Message = { from: "bot" | "user"; text: string };
-
-const BOT_REPLIES: { keywords: string[]; answer: string }[] = [
-  { keywords: ["сумм","сколько","максимум","минимум","100"], answer: "Мы выдаём займы от 1 000 до 30 000 ₽. Сумма подбирается индивидуально." },
-  { keywords: ["процент","ставк","переплат"], answer: "Первый займ — бесплатно! Повторный под 0,8% в день. ПСК от 0 до 292% годовых." },
-  { keywords: ["срок","дней","месяц"], answer: "Срок первого займа — до 7 дней бесплатно. Повторный — от 7 до 30 дней." },
-  { keywords: ["документ","паспорт","справк","нужн"], answer: "Только паспорт гражданина РФ! Справки не нужны 🎉" },
-  { keywords: ["одобр","отказ","история","плохая"], answer: "Рассматриваем даже плохую кредитную историю. Решение за 2–15 минут." },
-  { keywords: ["перевод","карт","получить","деньги","быстро"], answer: "Деньги на карту за 5 минут после одобрения. Работаем 24/7 🚀" },
-  { keywords: ["верификац","фото","селфи","проверк"], answer: "Онлайн-верификация: фото паспорта + селфи. Занимает 3–5 минут." },
-  { keywords: ["досрочн","погасить","раньше"], answer: "Досрочное погашение — в любой момент, без штрафов ✅" },
-  { keywords: ["заявк","оформить","подать","начать"], answer: "Нажмите «Получить деньги» вверху — заявка займёт 3 минуты." },
-  { keywords: ["привет","здравствуй","добрый","хай"], answer: "Привет! 👋 Я Кредо — бот КредитБыстро. Задайте любой вопрос!" },
-  { keywords: ["самозан","самозанят"], answer: "Для самозанятых скидка до 20% на ставку! Укажите это при оформлении заявки." },
-];
-const BOT_QUICK = ["Первый займ бесплатно?", "Какая ставка?", "Нужен ли паспорт?", "Скидка самозанятым?"];
-function getBotReply(text: string) {
-  const l = text.toLowerCase();
-  for (const r of BOT_REPLIES) if (r.keywords.some((k) => l.includes(k))) return r.answer;
-  return "Для точного ответа позвоните: 8 800 555-XX-XX (бесплатно) или оставьте заявку — перезвоним за 5 мин.";
-}
-
-function ChatBot() {
-  const [open, setOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
-    { from: "bot", text: "Привет! 👋 Я Кредо — бот КредитБыстро. Задайте вопрос о займе." },
-  ]);
-  const [input, setInput] = useState("");
-  const [typing, setTyping] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, typing]);
-
-  const send = (text: string) => {
-    if (!text.trim()) return;
-    setMessages((p) => [...p, { from: "user", text }]);
-    setInput("");
-    setTyping(true);
-    setTimeout(() => { setTyping(false); setMessages((p) => [...p, { from: "bot", text: getBotReply(text) }]); }, 900);
-  };
-
-  return (
-    <>
-      <button onClick={() => setOpen((v) => !v)}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full btn-red shadow-xl flex items-center justify-center animate-pulse-glow transition-transform hover:scale-110">
-        {open ? <Icon name="X" size={22} className="text-white" /> : <Icon name="MessageCircle" size={24} className="text-white" />}
-        {!open && <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-green-400 border-2 border-white" />}
-      </button>
-      {open && (
-        <div className="fixed bottom-24 right-6 z-50 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden"
-          style={{ maxHeight: 500, animation: "fadeUp 0.22s ease-out" }}>
-          <div className="btn-red px-5 py-3.5 flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center">
-              <Icon name="Bot" size={18} className="text-white" />
-            </div>
-            <div>
-              <div className="text-white font-bold text-sm">Кредо — бот поддержки</div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-green-300 animate-pulse" />
-                <span className="text-white/75 text-xs">Онлайн · отвечает мгновенно</span>
-              </div>
-            </div>
-          </div>
-          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3" style={{ minHeight: 0 }}>
-            {messages.map((m, i) => (
-              <div key={i} className={`flex ${m.from === "user" ? "justify-end" : "justify-start"}`}>
-                {m.from === "bot" && (
-                  <div className="w-7 h-7 rounded-full btn-red flex items-center justify-center mr-2 mt-0.5 flex-shrink-0">
-                    <Icon name="Bot" size={12} className="text-white" />
-                  </div>
-                )}
-                <div className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
-                  m.from === "user" ? "btn-red text-white rounded-br-sm" : "bg-gray-100 text-gray-800 rounded-bl-sm"
-                }`}>{m.text}</div>
-              </div>
-            ))}
-            {typing && (
-              <div className="flex gap-2 items-center">
-                <div className="w-7 h-7 rounded-full btn-red flex items-center justify-center flex-shrink-0">
-                  <Icon name="Bot" size={12} className="text-white" />
-                </div>
-                <div className="bg-gray-100 rounded-2xl rounded-bl-sm px-4 py-3 flex gap-1">
-                  {[0,1,2].map((d) => <span key={d} className="w-2 h-2 rounded-full bg-red-400 animate-bounce" style={{ animationDelay: `${d*0.15}s` }} />)}
-                </div>
-              </div>
-            )}
-            <div ref={bottomRef} />
-          </div>
-          <div className="px-4 pb-2 flex flex-wrap gap-1.5">
-            {BOT_QUICK.map((q) => (
-              <button key={q} onClick={() => send(q)} className="text-xs border border-red-200 text-red-600 px-3 py-1 rounded-full hover:bg-red-50 transition-colors">{q}</button>
-            ))}
-          </div>
-          <div className="px-4 pb-4 pt-2 flex gap-2">
-            <input value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && send(input)}
-              placeholder="Напишите вопрос..."
-              className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-400 transition-all" />
-            <button onClick={() => send(input)} className="w-10 h-10 rounded-xl btn-red flex items-center justify-center flex-shrink-0">
-              <Icon name="Send" size={15} className="text-white" />
-            </button>
-          </div>
-        </div>
-      )}
-    </>
-  );
-}
+import ChatBot from "@/components/ChatBot";
+import HeroSection from "@/components/HeroSection";
+import ApplyForm from "@/components/ApplyForm";
 
 /* ─── Data ──────────────────────────────────────────────────── */
 const REVIEWS = [
@@ -136,18 +32,13 @@ export default function Index() {
   const [amount, setAmount] = useState(10000);
   const [days, setDays]     = useState(7);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [openFaq, setOpenFaq]   = useState<number | null>(null);
 
-  const isFirst = days <= 7 && amount <= 30000;
-  const rate    = isFirst ? 0 : 0.008;
-  const dueDate = new Date(); dueDate.setDate(dueDate.getDate() + days);
-  const dueDateStr = dueDate.toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" });
+  const isFirst      = days <= 7 && amount <= 30000;
+  const rate         = isFirst ? 0 : 0.008;
+  const dueDate      = new Date(); dueDate.setDate(dueDate.getDate() + days);
+  const dueDateStr   = dueDate.toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" });
   const totalPayment = amount + Math.round(amount * rate * days);
-
-  const [form, setForm]     = useState({ name: "", phone: "", agree: false });
-  const [submitted, setSubmitted] = useState(false);
-  const [openFaq, setOpenFaq]     = useState<number | null>(null);
-
-  const handleSubmit = (e: React.FormEvent) => { e.preventDefault(); setSubmitted(true); };
 
   const NAV = ["Займ", "Условия", "О нас", "Блог", "Контакты"];
 
@@ -162,7 +53,6 @@ export default function Index() {
       {/* NAVBAR */}
       <header className="sticky top-0 z-40 bg-white border-b border-gray-100 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
-          {/* Лого */}
           <a href="#hero" className="flex items-center gap-1.5 font-bold text-xl text-gray-900">
             <span>Credit</span>
             <span className="relative">
@@ -171,14 +61,12 @@ export default function Index() {
             </span>
           </a>
 
-          {/* Desktop nav */}
           <nav className="hidden md:flex items-center gap-5">
             {NAV.map((n) => (
               <a key={n} href="#" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">{n}</a>
             ))}
           </nav>
 
-          {/* Actions */}
           <div className="flex items-center gap-2">
             <a href="#apply" className="btn-red text-sm font-semibold px-5 py-2 rounded-lg hidden sm:flex items-center">
               Внести платёж
@@ -200,143 +88,16 @@ export default function Index() {
         )}
       </header>
 
-      {/* HERO — калькулятор слева, текст справа */}
-      <section id="hero" className="section-gray">
-        <div className="max-w-6xl mx-auto px-4 py-10 lg:py-14 grid lg:grid-cols-2 gap-10 items-center">
-
-          {/* Калькулятор */}
-          <div className="card-light p-7 animate-fade-up">
-            {/* Сумма */}
-            <div className="mb-6">
-              <div className="flex justify-between items-center mb-3">
-                <span className="text-gray-700 font-medium">Выберите сумму</span>
-                <div className="flex items-center gap-1 border border-gray-200 rounded-lg px-3 py-1.5 bg-gray-50">
-                  <span className="font-bold text-gray-900">{amount.toLocaleString("ru")}</span>
-                  <span className="text-red-600 font-bold">₽</span>
-                </div>
-              </div>
-              <input type="range" min={1000} max={30000} step={500} value={amount}
-                onChange={(e) => setAmount(+e.target.value)}
-                style={{ background: `linear-gradient(to right, #E32636 ${((amount-1000)/290)}%, #e2e8f0 ${((amount-1000)/290)}%)` }}
-                className="w-full" />
-              <div className="flex justify-between text-xs text-gray-400 mt-1.5">
-                <span>1 000 ₽</span><span>30 000 ₽</span>
-              </div>
-            </div>
-
-            {/* Срок */}
-            <div className="mb-6">
-              <div className="flex justify-between items-center mb-3">
-                <span className="text-gray-700 font-medium">Выберите срок</span>
-                <div className="flex items-center gap-1 border border-gray-200 rounded-lg px-3 py-1.5 bg-gray-50">
-                  <span className="font-bold text-gray-900">{days}</span>
-                  <span className="text-red-600 font-bold">дней</span>
-                </div>
-              </div>
-              <input type="range" min={7} max={30} step={1} value={days}
-                onChange={(e) => setDays(+e.target.value)}
-                style={{ background: `linear-gradient(to right, #E32636 ${((days-7)/23)*100}%, #e2e8f0 ${((days-7)/23)*100}%)` }}
-                className="w-full" />
-              <div className="flex justify-between text-xs text-gray-400 mt-1.5">
-                <span>7 дней</span><span>30 дней</span>
-              </div>
-            </div>
-
-            {/* Итог */}
-            <div className="bg-gray-50 rounded-xl px-5 py-4 mb-5 space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Вы возвращаете</span>
-                <span className="font-bold text-gray-900">{totalPayment.toLocaleString("ru")} ₽</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">До (включительно)</span>
-                <span className="font-semibold text-gray-700">{dueDateStr}</span>
-              </div>
-              {isFirst && (
-                <div className="text-xs text-green-600 font-medium pt-1">🎉 Первый займ бесплатно — переплата 0 ₽</div>
-              )}
-            </div>
-
-            <a href="#apply" className="btn-red w-full py-3.5 rounded-xl text-center font-bold text-lg block mb-4">
-              Получить деньги
-            </a>
-
-            <p className="text-center text-xs text-gray-400 mb-4">Быстрая заявка через Т‑Банк или Госуслуги</p>
-            <div className="flex gap-3">
-              <button className="pill flex-1 justify-center">
-                <span className="w-5 h-5 rounded-full bg-yellow-400 flex items-center justify-center text-xs font-bold text-white">T</span>
-                Т‑Банк
-              </button>
-              <button className="pill flex-1 justify-center">
-                <Icon name="Globe" size={16} className="text-red-600" />
-                Госуслуги
-              </button>
-            </div>
-
-            <button className="mt-3 w-full text-center text-sm text-gray-500 hover:text-gray-700 underline underline-offset-2 transition-colors">
-              У меня есть промокод ?
-            </button>
-
-            {/* Самозанятым */}
-            <div className="mt-3 border border-green-200 rounded-xl px-4 py-3 flex items-center justify-between cursor-pointer hover:bg-green-50 transition-colors">
-              <div className="flex items-center gap-2 text-sm text-gray-700">
-                <span className="text-lg">🌿</span>
-                <span>Скидки самозанятым до</span>
-                <span className="bg-green-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">20%</span>
-              </div>
-              <Icon name="ChevronDown" size={16} className="text-gray-400" />
-            </div>
-
-            {/* Ссылки */}
-            <div className="mt-4 space-y-1.5">
-              {["А если я не успею вернуть займ вовремя?", "Условия бесплатного займа МКК", "Правила применения промокода МКК"].map((t) => (
-                <a key={t} href="#" className="block text-xs text-red-600 hover:underline">{t}</a>
-              ))}
-            </div>
-          </div>
-
-          {/* Правая сторона — текст */}
-          <div className="animate-fade-up" style={{ animationDelay: "0.15s" }}>
-            <p className="text-sm text-gray-500 mb-2 font-medium">Займ онлайн</p>
-            <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 leading-tight mb-5">
-              Первый заём<br />
-              <span className="text-red-600">бесплатно*</span>
-            </h1>
-
-            <div className="inline-flex items-center gap-2 border border-gray-200 rounded-full px-5 py-2.5 mb-8 bg-white shadow-sm">
-              <Icon name="Clock" size={16} className="text-gray-500" />
-              <span className="text-gray-700 font-medium">Деньги у вас уже в</span>
-              <span className="font-bold text-gray-900 ml-1">
-                {new Date(Date.now() + 15 * 60000).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}
-              </span>
-            </div>
-
-            {/* Преимущества */}
-            <div className="space-y-4 mb-8">
-              {[
-                { icon: "Zap", title: "Получите деньги за 7 минут", desc: "Моментальное одобрение заявки и мгновенное зачисление на карту." },
-                { icon: "FileText", title: "Прозрачные и простые условия", desc: "Первый займ без процентов. Следующий — всего под 0,8% в день. Никаких скрытых комиссий." },
-                { icon: "CalendarCheck", title: "Возвращайте когда вам удобно", desc: "Легко погасить досрочно или изменить дату оплаты, оплачивая лишь проценты." },
-              ].map((f) => (
-                <div key={f.title} className="flex gap-4 items-start">
-                  <div className="w-11 h-11 rounded-xl bg-red-50 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <Icon name={f.icon} size={20} className="text-red-600" />
-                  </div>
-                  <div>
-                    <div className="font-semibold text-gray-900 mb-0.5">{f.title}</div>
-                    <div className="text-sm text-gray-500 leading-relaxed">{f.desc}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <p className="text-xs text-gray-400 leading-relaxed">
-              *при условии полного погашения займа в срок. При повторном займе на сумму до 30 000 р, деньги выдаются под 0,8% в день.
-              Срок первого займа не должен превышать 7 дней для бесплатного займа.
-            </p>
-          </div>
-        </div>
-      </section>
+      {/* HERO */}
+      <HeroSection
+        amount={amount}
+        setAmount={setAmount}
+        days={days}
+        setDays={setDays}
+        isFirst={isFirst}
+        totalPayment={totalPayment}
+        dueDateStr={dueDateStr}
+      />
 
       {/* ПСК заметка */}
       <div className="max-w-6xl mx-auto px-4 py-4">
@@ -399,69 +160,7 @@ export default function Index() {
       </section>
 
       {/* ФОРМА ЗАЯВКИ */}
-      <section id="apply" className="py-14 bg-white">
-        <div className="max-w-xl mx-auto px-4">
-          <h2 className="text-3xl font-bold mb-2 text-center">Подать заявку</h2>
-          <p className="text-gray-500 text-center mb-8">Заполните форму — ответим за 5 минут</p>
-
-          {submitted ? (
-            <div className="card-light p-10 text-center">
-              <div className="w-16 h-16 rounded-full btn-red flex items-center justify-center mx-auto mb-4">
-                <Icon name="CheckCircle" size={30} className="text-white" />
-              </div>
-              <h3 className="text-2xl font-bold mb-2">Заявка отправлена!</h3>
-              <p className="text-gray-500">Специалист свяжется с вами в течение 5 минут</p>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="card-light p-7 space-y-5">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Ваше имя *</label>
-                <input required placeholder="Иван Иванов" value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-400 transition-all" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Телефон *</label>
-                <input required type="tel" placeholder="+7 (___) ___-__-__" value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-400 transition-all" />
-              </div>
-
-              <div className="bg-red-50 rounded-xl p-4 border border-red-100">
-                <div className="flex items-center gap-2 mb-2">
-                  <Icon name="Shield" size={16} className="text-red-600" />
-                  <span className="text-sm font-semibold text-red-800">Верификация личности</span>
-                </div>
-                <p className="text-xs text-red-600 mb-2">После заявки — фото паспорта + селфи онлайн (3–5 мин)</p>
-                <div className="flex gap-2">
-                  <div className="flex items-center gap-1.5 bg-white rounded-lg px-3 py-1.5 border border-red-200 text-xs text-red-700">
-                    <Icon name="Camera" size={12} /> Паспорт
-                  </div>
-                  <div className="flex items-center gap-1.5 bg-white rounded-lg px-3 py-1.5 border border-red-200 text-xs text-red-700">
-                    <Icon name="User" size={12} /> Селфи
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-2.5">
-                <input type="checkbox" id="agree" required checked={form.agree}
-                  onChange={(e) => setForm({ ...form, agree: e.target.checked })}
-                  className="mt-1 w-4 h-4 flex-shrink-0" style={{ accentColor: "#E32636" }} />
-                <label htmlFor="agree" className="text-xs text-gray-500 leading-relaxed">
-                  Я согласен с{" "}
-                  <a href="#" className="text-red-600 underline">условиями обработки персональных данных</a>
-                  {" "}и{" "}
-                  <a href="#" className="text-red-600 underline">правилами предоставления займов</a>
-                </label>
-              </div>
-
-              <button type="submit" className="btn-red w-full py-3.5 rounded-xl font-bold text-lg">
-                Отправить заявку
-              </button>
-            </form>
-          )}
-        </div>
-      </section>
+      <ApplyForm />
 
       {/* FAQ */}
       <section id="faq" className="section-gray py-14">
