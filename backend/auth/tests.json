@@ -1,0 +1,1 @@
+{"tests": [{"name": "OPTIONS CORS", "method": "OPTIONS", "path": "/", "expectedStatus": 200}, {"name": "Login wrong creds", "method": "POST", "path": "/?action=login", "body": {"phone": "00000000000", "password": "wrong"}, "expectedStatus": 401}]}

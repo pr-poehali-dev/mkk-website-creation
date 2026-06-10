@@ -1,8 +1,10 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Icon from "@/components/ui/icon";
 import ChatBot from "@/components/ChatBot";
 import HeroSection from "@/components/HeroSection";
 import ApplyForm from "@/components/ApplyForm";
+import { useAuth } from "@/context/AuthContext";
 
 /* ─── Data ──────────────────────────────────────────────────── */
 const REVIEWS = [
@@ -33,6 +35,10 @@ export default function Index() {
   const [days, setDays]     = useState(7);
   const [menuOpen, setMenuOpen] = useState(false);
   const [openFaq, setOpenFaq]   = useState<number | null>(null);
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const cabinetPath = user ? (user.role === "admin" ? "/admin" : "/cabinet") : "/login";
 
   const isFirst      = days <= 7 && amount <= 30000;
   const rate         = isFirst ? 0 : 0.008;
@@ -68,12 +74,12 @@ export default function Index() {
           </nav>
 
           <div className="flex items-center gap-2">
-            <a href="#apply" className="btn-red text-sm font-semibold px-5 py-2 rounded-lg hidden sm:flex items-center">
-              Внести платёж
-            </a>
-            <button className="flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-900 transition-colors">
+            <button onClick={() => navigate(cabinetPath)} className="btn-red text-sm font-semibold px-5 py-2 rounded-lg hidden sm:flex items-center">
+              Оплата
+            </button>
+            <button onClick={() => navigate(cabinetPath)} className="flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-900 transition-colors">
               <Icon name="LogIn" size={16} />
-              <span className="hidden sm:inline">Войти</span>
+              <span className="hidden sm:inline">{user ? "Кабинет" : "Войти"}</span>
             </button>
             <button className="md:hidden ml-1" onClick={() => setMenuOpen(!menuOpen)}>
               <Icon name={menuOpen ? "X" : "Menu"} size={22} className="text-gray-700" />
@@ -83,7 +89,9 @@ export default function Index() {
         {menuOpen && (
           <div className="md:hidden bg-white border-t border-gray-100 px-4 py-4 flex flex-col gap-3">
             {NAV.map((n) => <a key={n} href="#" onClick={() => setMenuOpen(false)} className="text-gray-700 font-medium py-1">{n}</a>)}
-            <a href="#apply" className="btn-red font-semibold px-5 py-2.5 rounded-lg text-center mt-1">Внести платёж</a>
+            <button onClick={() => navigate(cabinetPath)} className="btn-red font-semibold px-5 py-2.5 rounded-lg text-center mt-1">
+              {user ? "Личный кабинет" : "Войти"}
+            </button>
           </div>
         )}
       </header>
